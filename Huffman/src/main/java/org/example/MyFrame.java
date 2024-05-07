@@ -13,7 +13,7 @@ public class MyFrame extends JFrame implements ActionListener {
         private final JRadioButton decompressButton;
         private String filePath;
         private char choice = 'c';
-
+        private final Object lock = new Object();
     MyFrame(){
 
         //the main frame
@@ -98,10 +98,10 @@ public class MyFrame extends JFrame implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
-        if(actionEvent.getSource()==selectButton){
+        if(actionEvent.getSource()==selectButton) {
             JFileChooser fileChooser = new JFileChooser();
             int response = fileChooser.showOpenDialog(null); //select file to open
-            if(response == JFileChooser.APPROVE_OPTION){
+            if (response == JFileChooser.APPROVE_OPTION) {
                 start.setVisible(true);
                 File file = new File(fileChooser.getSelectedFile().getAbsolutePath());
                 setFilePath(file.getPath());
@@ -119,6 +119,16 @@ public class MyFrame extends JFrame implements ActionListener {
 
         if(actionEvent.getSource() == start){
             this.dispose();
+            synchronized (lock) {
+                lock.notify(); // Notify the waiting thread (main method)
+            }
+        }
+    }
+
+    // Add a method to wait for the start button to be clicked
+    public void waitForStart() throws InterruptedException {
+        synchronized (lock) {
+            lock.wait(); // Wait for notification from the start button
         }
     }
 
