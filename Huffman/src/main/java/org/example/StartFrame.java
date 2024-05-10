@@ -1,12 +1,10 @@
 package org.example;
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
-import java.util.Queue;
 
-public class MyFrame extends JFrame implements ActionListener {
+public class StartFrame extends JFrame implements ActionListener {
         private final JButton selectButton;
         private final JButton start;
         private final JRadioButton compressButton;
@@ -14,7 +12,7 @@ public class MyFrame extends JFrame implements ActionListener {
         private String filePath;
         private char choice = 'c';
         private final Object lock = new Object();
-    MyFrame(){
+    StartFrame(){
 
         //the main frame
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -89,6 +87,7 @@ public class MyFrame extends JFrame implements ActionListener {
         start.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 25));
         start.setFocusable(false);
         start.setVisible(false);
+
         //add all the components to the frame
         this.add(title, BorderLayout.NORTH);
         this.add(start, BorderLayout.SOUTH);
@@ -96,8 +95,13 @@ public class MyFrame extends JFrame implements ActionListener {
         this.setVisible(true);
     }
 
+    /**
+     * Function to handle the events from all buttons in the frame
+     * @param actionEvent, the event generated from any button
+     */
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
+        //File Selection button
         if(actionEvent.getSource()==selectButton) {
             JFileChooser fileChooser = new JFileChooser();
             int response = fileChooser.showOpenDialog(null); //select file to open
@@ -107,16 +111,20 @@ public class MyFrame extends JFrame implements ActionListener {
                 setFilePath(file.getPath());
             }
         }
+
+        //compress radio button
         if(actionEvent.getSource() == compressButton){
             System.out.println("Compression");
             this.setChoice('c');
         }
 
+        //decompress radio button
         if(actionEvent.getSource() == decompressButton){
             System.out.println("Decompression");
             this.setChoice('d');
         }
 
+        //start button
         if(actionEvent.getSource() == start){
             this.dispose();
             synchronized (lock) {
@@ -125,7 +133,10 @@ public class MyFrame extends JFrame implements ActionListener {
         }
     }
 
-    // Add a method to wait for the start button to be clicked
+    /**
+     * Function to add synchronization between the GUI and application functionality
+     * @throws InterruptedException
+     */
     public void waitForStart() throws InterruptedException {
         synchronized (lock) {
             lock.wait(); // Wait for notification from the start button

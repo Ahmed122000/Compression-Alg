@@ -5,13 +5,20 @@ import java.util.Hashtable;
 import java.util.PriorityQueue;
 
 public class Encoder {
+
+
     private String filePath;
+    private ByteCounter bc;
+
     private Hashtable<Byte, String> huffmanCodes = new Hashtable<Byte, String>();
 
-    public Encoder(String filePath){
+
+    public Encoder(String filePath, ByteCounter bc){
         this.filePath = filePath;
+        this.bc = bc;
     }
 
+    //generate Huffman codes recursively (left: 0, right: 1)
     private void generateCodes(Node head, String code){
         if(head.left == null && head.right == null){
             head.setCode(code);
@@ -23,15 +30,15 @@ public class Encoder {
             generateCodes(head.right, code+"1");
     }
 
+    //generate the codes for each byte (depending on its frequency)
     public void encode(){
-        ByteCounter bc = new ByteCounter();
         try {
-            bc.countBytesFrequency(filePath);
+            this.bc.countBytesFrequency(filePath);
         } catch (IOException e) {
             System.out.println("couldn't count frequency");
             throw new RuntimeException(e);
         }
-        Hashtable<Byte, Integer> freq = bc.getFrequency();
+        Hashtable<Byte, Integer> freq = this.bc.getFrequency();
 
         PriorityQueue<Node> heap = new PriorityQueue<>();
         for(byte b: freq.keySet()){
@@ -53,5 +60,4 @@ public class Encoder {
     public Hashtable<Byte, String> getHuffmanCodes(){
         return this.huffmanCodes;
     }
-
 }

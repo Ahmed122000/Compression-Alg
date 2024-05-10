@@ -1,6 +1,7 @@
 package org.example;
 
 public class Node implements Comparable<Node>{
+
     byte b;
     int freq;
     Node left=null;
