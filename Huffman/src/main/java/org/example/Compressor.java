@@ -4,7 +4,9 @@ import java.io.*;
 import java.nio.Buffer;
 import java.util.Hashtable;
 
+
 public class Compressor {
+    private final int bufferSize = 1024;
 
     HeaderMaker headerMaker;
     Hashtable<Byte, String> codes;
@@ -43,10 +45,10 @@ public class Compressor {
 
         //to hold the input bytes from file to compress them
         int bytesRead;
-        byte[] inputBuffer = new byte[1024];
+        byte[] inputBuffer = new byte[bufferSize];
 
         //to buffer compressed bytes before write them back into output file
-        byte[] outputBuffer = new byte[1024];
+        byte[] outputBuffer = new byte[bufferSize];
 
         //to follow the bits of Huffman code and save them as bytes
         byte collectedBits = 0;
@@ -54,37 +56,37 @@ public class Compressor {
 
 
         while ((bytesRead=bis.read(inputBuffer)) != -1){
-            System.out.println("we read: " + bytesRead + " bytes");
             int outputIndex = 0;
 
             for(int b = 0; b < bytesRead; b++){
-
                 String code = this.codes.get(inputBuffer[b]);                //get the code of the byte
-                System.out.println("code is: " + code);
                 for(int i = 0; i < code.length(); i++){
+                    codeBits <<= 1;
                     if (code.charAt(i) == '1'){
                         codeBits |=1;                           //if 1 or with 1 then shift left
                     }
                     collectedBits++;                            //count the bits collected
-
-                    System.out.println("we have " + collectedBits + " bits code");
-                    System.out.println("The collected byte: " + codeBits);
-
                     if(collectedBits == 8){
                         outputBuffer[outputIndex++] = codeBits; //if we collect byte then save it in the buffer
                         collectedBits = 0;                      //start counting from again
                         codeBits = 0;                           //empty the byte for the new compressed byte
                     }
-                    else{
-                        codeBits <<=1;
+                    //else{
+                    //    codeBits <<=1;
+                   // }
+
+                    if(outputIndex == bufferSize){
+                        bos.write(outputBuffer);
+                        outputIndex=0;
                     }
                 }
 
             }
-            System.out.println("size of the output buffer: " + outputBuffer.length);
-            bos.write(outputBuffer, 0, outputIndex+1);
-        }
 
+            bos.write(outputBuffer, 0, outputIndex);
+        }
+        //outputBuffer[outputIndex] = codeBits;
+        bos.write(codeBits);
         bos.write('\0');
         bos.close();
         bis.close();

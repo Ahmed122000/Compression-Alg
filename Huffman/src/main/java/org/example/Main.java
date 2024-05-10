@@ -2,7 +2,10 @@ package org.example;
 
 import java.util.Hashtable;
 
+
 public class Main {
+
+
 
     public static void main(String[] args) {
         System.out.println("Welcome to Huffman Encoder....!");
@@ -17,21 +20,20 @@ public class Main {
             e.printStackTrace();
         }
 
-
         //start to calculate run-time
         long start = System.currentTimeMillis();
-
 
         if(startFrame.getChoice() == 'c') {
             //encode the bytes of input file
             ByteCounter bc = new ByteCounter();
             Encoder huffmanEncoder = new Encoder(startFrame.getFilePath(), bc);
             huffmanEncoder.encode();
+
             Hashtable<Byte, String> codes = huffmanEncoder.getHuffmanCodes();
+
             for (byte b : codes.keySet()) {
                 System.out.println(b + " : " + codes.get(b));
             }
-
 
             HeaderMaker headerMaker = new HeaderMaker(bc, huffmanEncoder);
 
@@ -44,17 +46,25 @@ public class Main {
             }
         }
         else{
-           Decompressor decompressor = new Decompressor();
-           decompressor.decompress(startFrame.getFilePath());
+            try {
+                Decompressor decompressor = new Decompressor();
+                String fileName = startFrame.getFileName();
+                fileName = fileName.replace(".hc", "");
+                String[] name = fileName.split("\\.");
+                name[0] = name[0] + "_decompressed";
+                String outputFileName = name[0] + "." + name[1];
+                String outputFilePath = startFrame.getFilePath().replace(fileName+".hc", outputFileName);
+                System.out.println("output file: " + outputFilePath);
+                decompressor.decompress(startFrame.getFilePath(), outputFilePath);//startFrame.getFilePath());
+            }catch (Exception e){
+                e.printStackTrace();
+            }
         }
+
         long end = System.currentTimeMillis();
         long runtime = end-start;
 
-
         //give the user notification that the file is done
         System.out.println("this code took: " + runtime + " ms" + " == " + (runtime/1000) + " sec");
-
-
-
     }
 }

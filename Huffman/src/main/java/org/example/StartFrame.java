@@ -10,6 +10,7 @@ public class StartFrame extends JFrame implements ActionListener {
         private final JRadioButton compressButton;
         private final JRadioButton decompressButton;
         private String filePath;
+        private String fileName;
         private char choice = 'c';
         private final Object lock = new Object();
     StartFrame(){
@@ -109,6 +110,7 @@ public class StartFrame extends JFrame implements ActionListener {
                 start.setVisible(true);
                 File file = new File(fileChooser.getSelectedFile().getAbsolutePath());
                 setFilePath(file.getPath());
+                setFileName(file.getName());
             }
         }
 
@@ -151,6 +153,13 @@ public class StartFrame extends JFrame implements ActionListener {
         return filePath;
     }
 
+    void setFileName(String fileName){
+        this.fileName = fileName;
+    }
+
+    String getFileName(){
+        return this.fileName;
+    }
     void setChoice(char c){
         this.choice=c;
     }
@@ -158,4 +167,6 @@ public class StartFrame extends JFrame implements ActionListener {
     char getChoice(){
         return this.choice;
     }
+
+
 }
