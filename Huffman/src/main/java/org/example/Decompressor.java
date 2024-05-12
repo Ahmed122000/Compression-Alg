@@ -1,17 +1,119 @@
 package org.example;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 
 public class Decompressor {
 
-    private final int bufferSize = 1024;
+    private final int bufferSize = 1024; // Adjusted buffer size
+
+
+    public static void deCompressFile(String compressedFile, String decompressedFile) throws IOException, ClassNotFoundException {
+        ObjectInputStream input = new ObjectInputStream(new FileInputStream(compressedFile));
+        OutputStream out = new FileOutputStream(decompressedFile);
+        int n = input.readInt();
+
+        Hashtable<String, Byte> codesWords = (Hashtable<String, Byte>)input.readObject();
+
+        byte[] buffer = new byte[500];
+        byte[] output = new byte[2000];
+        int numBytes = 0;
+        int bytesRead;
+
+        StringBuilder curr = new StringBuilder();
+        while ((bytesRead = input.read(buffer)) != -1) {
+
+            for (int i = 0; i < bytesRead; i++){
+                byte b = buffer[i];
+
+                String str = String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0');
+                for (int j = 0; j < str.length(); j++){
+                    curr.append(str.charAt(j));
+                    if (codesWords.containsKey(String.valueOf(curr))){
+                        byte by = codesWords.get(String.valueOf(curr));
+                        if (output.length - numBytes < 1){
+                            out.write(output, 0, numBytes);
+                            numBytes = 0;
+                        }
+                        output[numBytes] = by;
+                        numBytes += 1;
+                        curr = new StringBuilder();
+                    }
+                }
+            }
+        }
+        out.write(output, 0, numBytes);
+        input.close();
+        out.close();
+    }
+
     /**
-     * function to get the bits of the provided byte as booleans (1=true, 0=false)
-     * @param b, the byte to extract its bits
-     * @return bits, array of booleans represents the bits of the byte
+     * Function to decompress the compress file
+     *
+     * @param inputFilePath  the path to the compress file
+     * @param outputFilePath the path to write the decompressed file
+     * @throws IOException            in case there was any error reading/writing the file
+     * @throws ClassNotFoundException in case there was error reading the header from compressed file
      */
-    public static boolean[] getBits(byte b) {
+    public void decompress(String inputFilePath, String outputFilePath) throws IOException, ClassNotFoundException {
+        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(inputFilePath));
+        ObjectInputStream objectStream = new ObjectInputStream(bis);
+        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(outputFilePath));
+
+        Hashtable<String, Byte> dhashtable = (Hashtable<String, Byte>) objectStream.readObject();
+
+        int newlineChar = bis.read();
+        if (newlineChar != '\r') {
+            throw new IOException("Expected new line character not found");
+        }
+        bis.read(); // Skip '\n'
+
+        int bytesRead;
+        byte[] inputBuffer = new byte[bufferSize];
+        byte[] outputBuffer = new byte[bufferSize];
+        int outputBufferIndex = 0;
+
+        String code = "";
+
+        while ((bytesRead = bis.read(inputBuffer)) != -1) {
+            for (int i = 0; i < bytesRead; i++) {
+                boolean bits[] = getBits(inputBuffer[i]);
+
+                for (int j = 0; j < 8; j++) {
+                    code += bits[j] ? '1' : '0';
+
+                    if (dhashtable.containsKey(code)) {
+                        outputBuffer[outputBufferIndex++] = dhashtable.get(code);
+                        code = "";
+
+                        if (outputBufferIndex == bufferSize) {
+                            bos.write(outputBuffer, 0, outputBufferIndex);
+                            outputBufferIndex = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Write any remaining bytes in the output buffer
+        if (outputBufferIndex > 0) {
+            bos.write(outputBuffer, 0, outputBufferIndex);
+        }
+
+        // Check for the end marker (\0)
+        int endMarker = bis.read();
+        if (endMarker != -1 && endMarker != '\0') {
+            throw new IOException("Invalid end marker");
+        }
+
+        bos.close();
+        bis.close();
+    }
+
+    // Utility method to get bits of a byte
+    private boolean[] getBits(byte b) {
         boolean[] bits = new boolean[8];
         for (int i = 0; i < 8; i++) {
             bits[i] = ((b >> i) & 1) == 1;
@@ -24,90 +126,5 @@ public class Decompressor {
         }
 
         return bits;
-    }
-
-    /**
-     * Function to decompress the compress file
-     * @param inputFilePath the path to the compress file
-     * @param outputFilePath the path to write the decompressed file
-     * @throws IOException in case there was any error reading/writing the file
-     * @throws ClassNotFoundException in case there was error reading the header from compressed file
-     */
-    public void decompress(String inputFilePath, String outputFilePath) throws IOException, ClassNotFoundException {
-
-        //to read the compressed file
-        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(inputFilePath));
-        ObjectInputStream objectStream = new ObjectInputStream(bis);
-
-        //to write the decompressed file
-        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(outputFilePath));
-
-        //getting the header which is Hashtable of codes and last byte bits
-        Hashtable<String, Byte> dhashtable = (Hashtable<String, Byte>) objectStream.readObject();
-
-
-        //make sure header was read correctly (it followed by /r/n)
-        int newlineChar = bis.read();
-        if(newlineChar != '\r'){
-            throw new IOException("expected new line character not found");
-        }
-        bis.read(); //to remove \n character
-
-        int bytesRead;
-        byte[] inputBuffer = new byte[bufferSize];
-
-        //follow the output buffer so it doesn't overflow
-        int outputBufferIndex = 0;
-        byte[] outputBuffer = new byte[bufferSize];
-
-
-        String code = "";
-
-        //while the file still has bytes
-        while((bytesRead=bis.read(inputBuffer)) != -1){
-            for(int i =0; i< bytesRead; i++){
-                //get the bits for each byte
-                boolean bits[] = getBits(inputBuffer[i]);
-
-                //if it's the last byte
-                if(i < bufferSize-2 && inputBuffer[i+1] == '\0' ){
-                    int start = 8-dhashtable.get("last");
-                    for(int j = start ; j < 8 ; j++){
-                        if(bits[j]){
-                            code+='1';
-                        }
-                        else{
-                            code += '0';
-                        }
-                        if(dhashtable.keySet().contains(code)){
-                            outputBuffer[outputBufferIndex++] = dhashtable.get(code);
-                            code = "";
-                        }
-                    }
-                    break;
-                }
-                else{
-                    for (int j = 0; j < 8; j++){
-                        if(bits[j]){
-                            code+= '1';
-                        }
-                        else{
-                            code+='0';
-                        }
-                        if(dhashtable.keySet().contains(code)){
-                            outputBuffer[outputBufferIndex++] = dhashtable.get(code);
-                            code= "";
-                        }
-                        if(outputBufferIndex == bufferSize){
-                            bos.write(outputBuffer);
-                            outputBufferIndex=0;
-                        }
-                    }
-                }
-            }
-            bos.write(outputBuffer, 0, outputBufferIndex);
-        }
-        bos.close();
-        bis.close();
     }
 }

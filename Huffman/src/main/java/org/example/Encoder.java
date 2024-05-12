@@ -38,7 +38,7 @@ public class Encoder {
             System.out.println("couldn't count frequency");
             throw new RuntimeException(e);
         }
-        Hashtable<Byte, Integer> freq = this.bc.getFrequency();
+        Hashtable<Byte, Long> freq = this.bc.getFrequency();
 
         PriorityQueue<Node> heap = new PriorityQueue<>();
         for(byte b: freq.keySet()){

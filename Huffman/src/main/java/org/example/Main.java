@@ -40,7 +40,7 @@ public class Main {
             //start compress the file
             try {
                 Compressor compressor = new Compressor(headerMaker, huffmanEncoder.getHuffmanCodes());
-                compressor.writeCompressedFile(startFrame.getFilePath(), (startFrame.getFilePath() + ".hc"));
+                compressor.compressFile(startFrame.getFilePath(), (startFrame.getFilePath() + ".hc"), 1, new Node((byte)0, 0));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -55,7 +55,7 @@ public class Main {
                 String outputFileName = name[0] + "." + name[1];
                 String outputFilePath = startFrame.getFilePath().replace(fileName+".hc", outputFileName);
                 System.out.println("output file: " + outputFilePath);
-                decompressor.decompress(startFrame.getFilePath(), outputFilePath);//startFrame.getFilePath());
+                decompressor.deCompressFile(startFrame.getFilePath(), outputFilePath);//startFrame.getFilePath());
             }catch (Exception e){
                 e.printStackTrace();
             }

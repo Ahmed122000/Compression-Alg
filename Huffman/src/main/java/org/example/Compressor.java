@@ -2,7 +2,10 @@ package org.example;
 
 import java.io.*;
 import java.nio.Buffer;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 
 
 public class Compressor {
@@ -15,6 +18,71 @@ public class Compressor {
         this.codes = codes;
     }
 
+
+
+    public double compressFile(String filePath, String compressedFile, int n, Node root) throws IOException, ClassNotFoundException {
+
+        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(compressedFile)));
+
+        // write data for decompress
+        long numsInput = 0;
+        long numsOutput = 0;
+        oos.writeInt(n);
+
+        Hashtable<String, Byte> hashMap = this.headerMaker.makeHeader();
+        oos.writeObject(hashMap); //write hashtable of the codes
+
+        InputStream in = new FileInputStream(compressedFile);
+        numsOutput += in.readAllBytes().length; //calculate number of bytes in the output file until now
+        in.close();
+
+        //write compressed file
+        try (InputStream input = new FileInputStream(filePath)) {
+            byte[] buffer = new byte[2000];
+            byte[] output = new byte[2000];
+            int numBytes = 0;
+            int bytesRead;
+            String carry = "";
+
+            while ((bytesRead = input.read(buffer)) != -1) {
+                numsInput += bytesRead;
+                for (int x = 0; x < bytesRead; x++){
+                    String codeWord = carry + codes.get(buffer[x]);
+                    if (codeWord.length() < 8){
+                        carry = codeWord;
+                        continue;
+                    }
+                    int overflowBits = codeWord.length() % 8;
+                    String toWrite = codeWord.substring(0, codeWord.length() - overflowBits);
+                    carry = codeWord.substring(codeWord.length() - overflowBits);
+                    for (int i = 0; i < toWrite.length(); i += 8){
+                        String byteStr = toWrite.substring(i, i + 8);
+                        int byteValue = Integer.parseInt(byteStr, 2);
+                        output[numBytes++] = (byte) byteValue;
+                        if (numBytes == output.length){
+                            numsOutput += numBytes;
+                            oos.write(output);
+                            numBytes = 0;
+                        }
+                    }
+                }
+            }
+            if (numBytes > 0){
+                oos.write(output, 0, numBytes);
+                numsOutput += numBytes;
+            }
+            if (!carry.equals("")){
+                int padding = 8 - carry.length() % 8;
+                carry += "0".repeat(padding);
+                int byteValue = Integer.parseInt(carry, 2);
+                oos.writeByte(byteValue);
+                numsOutput += 1;
+            }
+        }
+        oos.flush();
+        oos.close();
+        return numsOutput * 1.0 / numsInput;
+    }
     /**
      * Function to write the file after compress its bytes
       * @param inputFilePath, Path to the input file
@@ -26,12 +94,11 @@ public class Compressor {
 
         //serialize the header into raw bytes to write them into file
         byte[] serializedHeader;
-        try(ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteStream)){
+        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteStream)) {
             objectOutputStream.writeObject(headerMaker.makeHeader());
             serializedHeader = byteStream.toByteArray();
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             throw new IOException("Problem with the Header");
         }
 
@@ -54,40 +121,38 @@ public class Compressor {
         byte collectedBits = 0;
         byte codeBits = 0;
 
+        int outputIndex = 0;
+        while ((bytesRead = bis.read(inputBuffer)) != -1) {
+            outputIndex = 0;
 
-        while ((bytesRead=bis.read(inputBuffer)) != -1){
-            int outputIndex = 0;
-
-            for(int b = 0; b < bytesRead; b++){
-                String code = this.codes.get(inputBuffer[b]);                //get the code of the byte
-                for(int i = 0; i < code.length(); i++){
+            for (int b = 0; b < bytesRead; b++) {
+                String code = this.codes.get(inputBuffer[b]);
+                for (int i = 0; i < code.length(); i++) {
                     codeBits <<= 1;
-                    if (code.charAt(i) == '1'){
-                        codeBits |=1;                           //if 1 or with 1 then shift left
+                    if (code.charAt(i) == '1') {
+                        codeBits |= 1;
                     }
-                    collectedBits++;                            //count the bits collected
-                    if(collectedBits == 8){
-                        outputBuffer[outputIndex++] = codeBits; //if we collect byte then save it in the buffer
-                        collectedBits = 0;                      //start counting from again
-                        codeBits = 0;                           //empty the byte for the new compressed byte
-                    }
-                    //else{
-                    //    codeBits <<=1;
-                   // }
-
-                    if(outputIndex == bufferSize){
-                        bos.write(outputBuffer);
-                        outputIndex=0;
+                    collectedBits++;
+                    if (collectedBits == 8) {
+                        outputBuffer[outputIndex++] = codeBits;
+                        if (outputIndex == bufferSize) {
+                            bos.write(outputBuffer);
+                            outputIndex = 0;
+                        }
+                        collectedBits = 0;
+                        codeBits = 0;
                     }
                 }
-
             }
-
-            bos.write(outputBuffer, 0, outputIndex);
         }
-        //outputBuffer[outputIndex] = codeBits;
-        bos.write(codeBits);
-        bos.write('\0');
+
+// Write any remaining bytes in the output buffer
+        if (collectedBits > 0) {
+            codeBits <<= (8 - collectedBits); // Shift remaining bits to the leftmost position
+            outputBuffer[outputIndex++] = codeBits;
+        }
+
+        bos.write(outputBuffer, 0, outputIndex);
         bos.close();
         bis.close();
     }

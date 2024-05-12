@@ -7,7 +7,7 @@ public class HeaderMaker {
     ByteCounter bc;
     Encoder encoder;
     Hashtable<Byte, String> codes;
-    Hashtable<Byte, Integer> freq;
+    Hashtable<Byte, Long> freq;
 
 
     public HeaderMaker(ByteCounter bc, Encoder encoder){

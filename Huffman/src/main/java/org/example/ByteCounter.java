@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.Hashtable;
 
 public class ByteCounter{
-    private Hashtable<Byte, Integer> frequency = new Hashtable<Byte, Integer>();
+    private Hashtable<Byte, Long> frequency = new Hashtable<Byte, Long>();
 
 
     public void countBytesFrequency(String filePath) throws IOException {
@@ -20,7 +20,7 @@ public class ByteCounter{
                         frequency.put(buffer[i], frequency.get(buffer[i])+1);
                     }
                     else{
-                        frequency.put(buffer[i], 1);
+                        frequency.put(buffer[i], (long)1);
                     }
                 }
             }
@@ -36,7 +36,7 @@ public class ByteCounter{
 
     }
 
-    public Hashtable<Byte, Integer> getFrequency(){
+    public Hashtable<Byte, Long> getFrequency(){
         return this.frequency;
     }
 
