@@ -8,8 +8,6 @@ public class Main {
 
 
     public static void main(String[] args) {
-        System.out.println("Welcome to Huffman Encoder....!");
-
         //start frame
         StartFrame startFrame = new StartFrame();
 
@@ -40,7 +38,7 @@ public class Main {
             //start compress the file
             try {
                 Compressor compressor = new Compressor(headerMaker, huffmanEncoder.getHuffmanCodes());
-                compressor.compressFile(startFrame.getFilePath(), (startFrame.getFilePath() + ".hc"), 1, new Node((byte)0, 0));
+                compressor.compressFile(startFrame.getFilePath(), (startFrame.getFilePath() + ".hc"));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -48,13 +46,7 @@ public class Main {
         else{
             try {
                 Decompressor decompressor = new Decompressor();
-                String fileName = startFrame.getFileName();
-                fileName = fileName.replace(".hc", "");
-                String[] name = fileName.split("\\.");
-                name[0] = name[0] + "_decompressed";
-                String outputFileName = name[0] + "." + name[1];
-                String outputFilePath = startFrame.getFilePath().replace(fileName+".hc", outputFileName);
-                System.out.println("output file: " + outputFilePath);
+                String outputFilePath = outputFileName(startFrame);
                 decompressor.deCompressFile(startFrame.getFilePath(), outputFilePath);//startFrame.getFilePath());
             }catch (Exception e){
                 e.printStackTrace();
@@ -63,8 +55,28 @@ public class Main {
 
         long end = System.currentTimeMillis();
         long runtime = end-start;
-
+        Notification notification = new Notification(runtime);
         //give the user notification that the file is done
         System.out.println("this code took: " + runtime + " ms" + " == " + (runtime/1000) + " sec");
+    }
+
+
+    static void compress(){
+
+    }
+
+    /**
+     * Function to create the name for the decompressed file
+     * @param startFrame the start frame that contains the info about the files
+     * @return a string represents the name of output file
+     */
+    static String outputFileName(StartFrame startFrame){
+        String fileName = startFrame.getFileName();
+        fileName = fileName.replace(".hc", "");
+        String[] name = fileName.split("\\.");
+        name[0] = name[0] + "_decompressed";
+        String outputFileName = name[0] + "." + name[1];
+        String outputFilePath = startFrame.getFilePath().replace(fileName+".hc", outputFileName);
+        return outputFilePath;
     }
 }
