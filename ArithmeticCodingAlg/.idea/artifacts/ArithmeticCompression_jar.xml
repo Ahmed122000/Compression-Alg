@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="ArithmeticCompression:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/ArithmeticCompression_jar</output-path>
+    <root id="archive" name="ArithmeticCompression.jar">
+      <element id="module-output" name="ArithmeticCompression" />
+    </root>
+  </artifact>
+</component>
