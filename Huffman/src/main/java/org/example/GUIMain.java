@@ -3,7 +3,7 @@ package org.example;
 import java.util.Hashtable;
 
 
-public class Main {
+public class GUIMain {
 
 
 
@@ -47,7 +47,7 @@ public class Main {
             try {
                 Decompressor decompressor = new Decompressor();
                 String outputFilePath = outputFileName(startFrame);
-                decompressor.deCompressFile(startFrame.getFilePath(), outputFilePath);//startFrame.getFilePath());
+                decompressor.deCompressFile(startFrame.getFilePath(), outputFilePath);
             }catch (Exception e){
                 e.printStackTrace();
             }
